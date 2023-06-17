@@ -5,9 +5,9 @@ type Request = {
     statusMessage?: string;
     path: string;
     url: string;
-    params?: object;
-    body?: object;
-};
+    params?: any;
+    body?: any;
+}
 
 export default Request;
 
