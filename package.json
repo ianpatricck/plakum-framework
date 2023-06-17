@@ -5,15 +5,8 @@
   "repository": "git@github.com:ianpatricck/plakum-framework.git",
   "author": "Ian Patrick <contatoianpatrick@gmail.com>",
   "license": "MIT",
-  "scripts": {
-    "build": "tsc --build",
-    "start": "nodemon dist"
-  },
   "dependencies": {
     "@types/node": "^20.3.0",
     "typescript": "^5.1.3"
-  },
-  "devDependencies": {
-    "nodemon": "^2.0.22"
   }
 }
