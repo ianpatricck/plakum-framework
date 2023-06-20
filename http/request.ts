@@ -1,13 +1,17 @@
-type Request = {
-    headers: string[];
-    method: string;
-    statusCode?: string;
-    statusMessage?: string;
-    path: string;
-    url: string;
-    params?: any;
-    body?: any;
+import { IncomingMessage } from 'http';
+
+type ObjectSanitized = {
+    [key: string]: string | boolean | number | null | undefined;
 }
 
+type Request = {
+    method: string;
+    path: string | undefined;
+    params: ObjectSanitized;
+    body: ObjectSanitized;
+    incomingMessage: IncomingMessage;
+}
+
+export { ObjectSanitized };
 export default Request;
 
