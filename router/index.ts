@@ -1,5 +1,6 @@
 import url from "url";
-import { IncomingMessage } from "http";
+import { IncomingMessage, ServerResponse } from "http";
+import Request, { ObjectSanitized } from '../http/request';
 
 /*
  * Definição da rota
@@ -9,15 +10,8 @@ import { IncomingMessage } from "http";
 export type Route = {
     path: string;
     method: string;
-    params?: object;
+    params: ObjectSanitized;
     callback: Function;
-};
-
-type SimpleRequestData = {
-    headers: object;
-    statusCode: string | number | undefined;
-    statusMessage: string | undefined;
-    url: string | undefined;
 };
 
 /*
@@ -27,8 +21,18 @@ type SimpleRequestData = {
 
 class RouterRules {
 
+    protected clearRequestObject(): Request {
+        return {
+            method: '',
+            path: '',
+            params: {},
+            body: {},
+            incomingMessage: Object.create(IncomingMessage.prototype)
+        }
+    }
+
     protected routes: Route[] = [];
-    protected requestTemp: object = {};
+    protected request: Request = this.clearRequestObject();
 
     public filterRoutesByMethod(method: string | undefined): Route[] {
         const routes: Route[] = this.routes.filter(route => route.method === method);
@@ -53,7 +57,7 @@ class RouterRules {
 
             if (urlModel.length === urlReal.length) { 
 
-                let paramsObject: object = {};
+                let paramsObject: ObjectSanitized = {};
                 urlModel.forEach((element, index) => {
 
                     const startsWith = /^:/;
@@ -75,41 +79,52 @@ class RouterRules {
             return undefined;
     }
 
-    private getPostRequestBody(request: IncomingMessage, requestTemporary: object, callback: Function): void {
+    /*
+     * Se o método da requisição for POST, faz o 'dispatch' populando o body da resposta
+     * e convertendo-o para o formato JSON
+     *
+     */
+
+    private getPostRequestBody(request: Request, callback: Function): void {
 
         let body = '';
 
         if (request.method === 'POST') {
-            request.on('data', chunk => {
+            request.incomingMessage.on('data', chunk => {
                 body += chunk.toString();
             });
 
-            request.on('end', () => {
-                requestTemporary['body'] = JSON.parse(body); 
-                callback(requestTemporary);
+            request.incomingMessage.on('end', () => {
+                request.body = JSON.parse(body); 
+                callback(request);
             });
         }
 
     }
 
-    public setRequestAndSwitchRoutes(request: IncomingMessage, route: Route, simpleRequestData: SimpleRequestData): void {
+    /*
+     * Implementa a requisição e resposta e faz o 'Switch' nas rotas por meio dos métodos
+     *
+     */
 
-        this.requestTemp['headers']         = simpleRequestData.headers;
-        this.requestTemp['method']          = route.method;
-        this.requestTemp['statusCode']      = simpleRequestData.statusCode;
-        this.requestTemp['statusMessage']   = simpleRequestData.statusMessage;
-        this.requestTemp['path']            = route.path;
-        this.requestTemp['url']             = simpleRequestData.url;
-        this.requestTemp['params']          = route.params;
+    public setReqAndResAndSwitchRoutes(incomingMessage: IncomingMessage,  response: ServerResponse, route: Route): void {
+
+        this.request = {
+            method: route.method,
+            path: route.path,
+            params: route.params,
+            body: {},
+            incomingMessage: incomingMessage
+        };
 
         const method = route.method;
 
         switch (method) {
             case 'GET':
-                route.callback(this.requestTemp);
+                route.callback(this.request);
                 break;
             case 'POST':
-                this.getPostRequestBody(request, this.requestTemp, route.callback);
+                this.getPostRequestBody(this.request, route.callback);
                 break;
             default:
                 throw new Error (`Method ${method} not allowed`);
@@ -117,6 +132,11 @@ class RouterRules {
         } 
     }
 }
+
+/*
+ * Classe que engloba os verbos das rotas
+ *
+ */
 
 export default class Router extends RouterRules {
 
