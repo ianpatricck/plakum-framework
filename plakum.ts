@@ -12,9 +12,11 @@ class Plakum extends Router {
 
     const server = http.createServer((req: IncomingMessage, res: ServerResponse) => {
 
-      this.requestTemp = {};
+      this.request = this.clearRequestObject();
+
       var currentRoute: Route | undefined = undefined;
 
+      // Configuração padrão de roteamento
       const filterRoutesByMethod: Route[] = this.filterRoutesByMethod(req.method);
       const findRouteByUrl: Route | undefined = this.findRouteByUrl(filterRoutesByMethod, req.url);
 
@@ -30,14 +32,7 @@ class Plakum extends Router {
       }
 
       if (currentRoute) {
-
-        this.setRequestAndSwitchRoutes(req, currentRoute, {
-          headers: req.headers,
-          statusCode: req.statusCode,
-          statusMessage: req.statusMessage,
-          url: req.url
-        });
-
+        this.setReqAndResAndSwitchRoutes(req, res, currentRoute);
       } else {
         const url = req.url
         throw new Error (`Route ${url} is not defined!`);
@@ -45,6 +40,7 @@ class Plakum extends Router {
 
     });
 
+    // Iniciando o servidor
     server.listen(port, ...args);
   }
 
