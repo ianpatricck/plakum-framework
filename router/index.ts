@@ -1,6 +1,7 @@
 import url from "url";
 import { IncomingMessage, ServerResponse } from "http";
 import Request, { ObjectSanitized } from '../http/request';
+import Response, { ResponseData } from "../http/response";
 
 /*
  * Definição da rota
@@ -27,12 +28,27 @@ class RouterRules {
             path: '',
             params: {},
             body: {},
+            headers: {},
             incomingMessage: Object.create(IncomingMessage.prototype)
+        }
+    }
+
+    protected clearResponseObject(): Response {
+        return {
+            headers: {},
+            method: '',
+            statusCode: 200,
+            path: '',
+            url: '',
+            params: {},
+            send: () => null,
+            serverResponse: Object.create(ServerResponse.prototype)
         }
     }
 
     protected routes: Route[] = [];
     protected request: Request = this.clearRequestObject();
+    protected response: Response = this.clearResponseObject();
 
     public filterRoutesByMethod(method: string | undefined): Route[] {
         const routes: Route[] = this.routes.filter(route => route.method === method);
@@ -85,7 +101,7 @@ class RouterRules {
      *
      */
 
-    private getPostRequestBody(request: Request, callback: Function): void {
+    private getPostRequestBody(request: Request, response: Response, callback: Function): void {
 
         let body = '';
 
@@ -96,7 +112,7 @@ class RouterRules {
 
             request.incomingMessage.on('end', () => {
                 request.body = JSON.parse(body); 
-                callback(request);
+                callback(request, response);
             });
         }
 
@@ -107,24 +123,27 @@ class RouterRules {
      *
      */
 
-    public setReqAndResAndSwitchRoutes(incomingMessage: IncomingMessage,  response: ServerResponse, route: Route): void {
+    public setReqAndResAndSwitchRoutes(incomingMessage: IncomingMessage,  serverResponse: ServerResponse, route: Route): void {
 
         this.request = {
             method: route.method,
             path: route.path,
             params: route.params,
             body: {},
+            headers: incomingMessage.headers,
             incomingMessage: incomingMessage
         };
+
+        this.response = new ResponseData(serverResponse);
 
         const method = route.method;
 
         switch (method) {
             case 'GET':
-                route.callback(this.request);
+                route.callback(this.request, this.response);
                 break;
             case 'POST':
-                this.getPostRequestBody(this.request, route.callback);
+                this.getPostRequestBody(this.request, this.response, route.callback);
                 break;
             default:
                 throw new Error (`Method ${method} not allowed`);
