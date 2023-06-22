@@ -9,6 +9,7 @@ type Request = {
     path: string | undefined;
     params: ObjectSanitized;
     body: ObjectSanitized;
+    headers: object;
     incomingMessage: IncomingMessage;
 }
 
