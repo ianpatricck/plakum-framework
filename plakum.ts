@@ -13,6 +13,7 @@ class Plakum extends Router {
     const server = http.createServer((req: IncomingMessage, res: ServerResponse) => {
 
       this.request = this.clearRequestObject();
+      this.response = this.clearResponseObject();
 
       var currentRoute: Route | undefined = undefined;
 
