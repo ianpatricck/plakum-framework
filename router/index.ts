@@ -1,6 +1,6 @@
 import url from "url";
 import { IncomingMessage, ServerResponse } from "http";
-import Request, { ObjectSanitized } from '../http/request';
+import Request from '../http/request';
 import Response, { ResponseData } from "../http/response";
 
 /*
@@ -11,7 +11,7 @@ import Response, { ResponseData } from "../http/response";
 export type Route = {
     path: string;
     method: string;
-    params: ObjectSanitized;
+    params: object;
     callback: Function;
 };
 
@@ -73,12 +73,12 @@ class RouterRules {
 
             if (urlModel.length === urlReal.length) { 
 
-                let paramsObject: ObjectSanitized = {};
+                let paramsObject: object = {};
                 urlModel.forEach((element, index) => {
 
                     const startsWith = /^:/;
                     if (startsWith.test(element)) {
-                        paramsObject[element.replace(':', '')] = urlReal[index];
+                        paramsObject[element.replace(':', '')] = Number(urlReal[index]) ? Number(urlReal[index]) : urlReal[index];
                     }
 
                 });
@@ -101,17 +101,17 @@ class RouterRules {
      *
      */
 
-    private getPostRequestBody(request: Request, response: Response, callback: Function): void {
+    private getRequestBody(request: Request, response: Response, callback: Function): void {
 
         let body = '';
 
-        if (request.method === 'POST') {
+        if (request.method === 'POST' || request.method === 'PATCH' || request.method === 'PUT') {
             request.incomingMessage.on('data', chunk => {
                 body += chunk.toString();
             });
 
             request.incomingMessage.on('end', () => {
-                request.body = JSON.parse(body); 
+                request.body = body ? JSON.parse(body) : {}; 
                 callback(request, response);
             });
         }
@@ -124,7 +124,6 @@ class RouterRules {
      */
 
     public setReqAndResAndSwitchRoutes(incomingMessage: IncomingMessage,  serverResponse: ServerResponse, route: Route): void {
-
         this.request = {
             method: route.method,
             path: route.path,
@@ -143,7 +142,16 @@ class RouterRules {
                 route.callback(this.request, this.response);
                 break;
             case 'POST':
-                this.getPostRequestBody(this.request, this.response, route.callback);
+                this.getRequestBody(this.request, this.response, route.callback);
+                break;
+            case 'PATCH':
+                this.getRequestBody(this.request, this.response, route.callback);
+                break;
+            case 'PUT':
+                this.getRequestBody(this.request, this.response, route.callback);
+                break;
+            case 'DELETE':
+                route.callback(this.request, this.response);
                 break;
             default:
                 throw new Error (`Method ${method} not allowed`);
@@ -167,5 +175,16 @@ export default class Router extends RouterRules {
         this.routes.push({ path: path, method: 'POST', callback, params: {} });
     }
 
+    public patch(path: string, callback: Function): void { 
+        this.routes.push({ path: path, method: 'PATCH', callback, params: {} });
+    }
+
+    public put(path: string, callback: Function): void { 
+        this.routes.push({ path: path, method: 'PUT', callback, params: {} });
+    } 
+
+    public delete(path: string, callback: Function): void { 
+        this.routes.push({ path: path, method: 'DELETE', callback, params: {} });
+    }
 }
 
