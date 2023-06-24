@@ -45,6 +45,10 @@ class Plakum extends Router {
     server.listen(port, ...args);
   }
 
+  public setRouter(router): void {
+    this.routes = router.routes;
+  }
+
 };
 
 export default Plakum;
