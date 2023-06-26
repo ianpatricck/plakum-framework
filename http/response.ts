@@ -7,8 +7,10 @@ type Response = {
     path: string;
     url: string;
     params: object;
-    serverResponse: ServerResponse;
+    wasContentTypeSetted: boolean;
+    setContentType: Function;
     send: Function;
+    serverResponse: ServerResponse;
 }
 
 export class ResponseData {
@@ -21,19 +23,28 @@ export class ResponseData {
     params: object = {};
     serverResponse: ServerResponse = Object.create(ServerResponse.prototype);
 
+    wasContentTypeSetted: boolean = false;
+
     constructor(serverResponse: ServerResponse) {
         this.serverResponse = serverResponse;
     } 
 
-    public send(jsonData: JSON, statusCode: Response["statusCode"] = 200): void {
-
-        var response = this.serverResponse;
-        
-        response.statusCode = statusCode;
-        response.setHeader('Content-Type', 'application/json');
-        response.end(JSON.stringify(jsonData)); 
+    public setContentType(contentType: string): void {
+        this.wasContentTypeSetted = true;
+        this.serverResponse.setHeader('Content-Type', contentType);
     }
 
+    public send(data: JSON | string, statusCode: Response["statusCode"] = 200): void { 
+        
+        this.serverResponse.statusCode = statusCode;
+
+        if (this.wasContentTypeSetted) {
+            this.serverResponse.end(data); 
+        } else {
+            this.serverResponse.setHeader('Content-Type', 'application/json');
+            this.serverResponse.end(JSON.stringify(data)); 
+        }
+    }
 }
 
 export default Response;
