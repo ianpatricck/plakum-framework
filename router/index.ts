@@ -47,6 +47,8 @@ class RouterRules {
             path: '',
             url: '',
             params: {},
+            wasContentTypeSetted: false,
+            setContentType: () => null,
             send: () => null,
             serverResponse: Object.create(ServerResponse.prototype)
         }
