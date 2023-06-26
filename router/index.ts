@@ -22,6 +22,12 @@ export type Route = {
 
 class RouterRules {
 
+    protected routes: Route[] = [];
+    protected request: Request = this.clearRequestObject();
+    protected response: Response = this.clearResponseObject();
+
+    private isJsonRequest: boolean = false;
+
     protected clearRequestObject(): Request {
         return {
             method: '',
@@ -46,19 +52,30 @@ class RouterRules {
         }
     }
 
-    protected routes: Route[] = [];
-    protected request: Request = this.clearRequestObject();
-    protected response: Response = this.clearResponseObject();
+    /*
+     * Filtra as rotas pelo método da requisição
+     *
+     */
 
     public filterRoutesByMethod(method: string | undefined): Route[] {
         const routes: Route[] = this.routes.filter(route => route.method === method);
         return routes;
     }
 
+    /*
+     * Encontra a rota pela URL da requisição 
+     *
+     */
+
     public findRouteByUrl(routes: Route[], url: string | undefined): Route | undefined {
         const route: Route | undefined = routes.find(route => route.path === url); 
         return route;
     }
+
+    /*
+     * Encontra a rota pelo argumento passado
+     *
+     */
 
     public findRouteByParam(routes: Route[], requestUrl: string | undefined): Route | undefined {
         const routeFound: Route | undefined = routes.find(route => {
@@ -102,7 +119,6 @@ class RouterRules {
      */
 
     private getRequestBody(request: Request, response: Response, callback: Function): void {
-
         let body = '';
 
         if (request.method === 'POST' || request.method === 'PATCH' || request.method === 'PUT') {
@@ -111,8 +127,13 @@ class RouterRules {
             });
 
             request.incomingMessage.on('end', () => {
-                request.body = body ? JSON.parse(body) : {}; 
-                callback(request, response);
+
+                if (this.isJsonRequest)
+                    request.body = body ? JSON.parse(body) : {}; 
+                else
+                    request.body = body;
+
+                callback(request, response); 
             });
         }
 
@@ -157,6 +178,15 @@ class RouterRules {
                 throw new Error (`Method ${method} not allowed`);
                 break;
         } 
+    }
+
+    /*
+     * Define que o tipo da requisição é JSON
+     *
+     */
+
+    public json(): void {
+        this.isJsonRequest = true;
     }
 }
 
