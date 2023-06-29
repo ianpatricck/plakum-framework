@@ -5,7 +5,7 @@ type Request = {
     path: string | undefined;
     params: any;
     body: any;
-    headers: object;
+    headers: any;
     incomingMessage: IncomingMessage;
 }
 

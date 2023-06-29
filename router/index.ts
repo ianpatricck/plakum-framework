@@ -12,6 +12,7 @@ export type Route = {
     path: string;
     method: string;
     params: object;
+    middleware: Function | undefined;
     callback: Function;
 };
 
@@ -115,12 +116,12 @@ class RouterRules {
     }
 
     /*
-     * Se o método da requisição for POST, faz o 'dispatch' populando o body da resposta
-     * e convertendo-o para o formato JSON
+     * Se no método da requisição existir algum conteúdo no corpo, faz o 'dispatch' populando o body da resposta
+     * e convertendo-o para o formato JSON ou seja qual for.
      *
      */
 
-    private getRequestBody(request: Request, response: Response, callback: Function): void {
+    private callRouteWithBody(request: Request, response: Response, callback: Function, middleware: Function | undefined): void {
         let body = '';
 
         if (request.method === 'POST' || request.method === 'PATCH' || request.method === 'PUT') {
@@ -135,10 +136,26 @@ class RouterRules {
                 else
                     request.body = body;
 
+                if (middleware)
+                    middleware(request, response);
+
                 callback(request, response); 
             });
         }
 
+    }
+
+    /*
+     * Chama o callback caso não tenha um corpo definido na requisição
+     *
+     */
+
+    private callRouteWithoutBody(request: Request, response: Response, callback: Function, middleware: Function | undefined): void {
+
+        if (middleware)
+        middleware(request, response);
+
+        callback(request, response); 
     }
 
     /*
@@ -147,6 +164,7 @@ class RouterRules {
      */
 
     public setReqAndResAndSwitchRoutes(incomingMessage: IncomingMessage,  serverResponse: ServerResponse, route: Route): void {
+
         this.request = {
             method: route.method,
             path: route.path,
@@ -161,25 +179,25 @@ class RouterRules {
         const method = route.method;
 
         switch (method) {
-            case 'GET':
-                route.callback(this.request, this.response);
+            case 'GET': 
+                this.callRouteWithoutBody(this.request, this.response, route.callback, route.middleware);
                 break;
             case 'POST':
-                this.getRequestBody(this.request, this.response, route.callback);
+                this.callRouteWithBody(this.request, this.response, route.callback, route.middleware);
                 break;
             case 'PATCH':
-                this.getRequestBody(this.request, this.response, route.callback);
+                this.callRouteWithBody(this.request, this.response, route.callback, route.middleware);
                 break;
             case 'PUT':
-                this.getRequestBody(this.request, this.response, route.callback);
+                this.callRouteWithBody(this.request, this.response, route.callback, route.middleware);
                 break;
             case 'DELETE':
-                route.callback(this.request, this.response);
+                this.callRouteWithoutBody(this.request, this.response, route.callback, route.middleware);
                 break;
             default:
                 throw new Error (`Method ${method} not allowed`);
                 break;
-        } 
+        }
     }
 
     /*
@@ -199,24 +217,39 @@ class RouterRules {
 
 export default class Router extends RouterRules {
 
-    public get(path: string, callback: Function): void { 
-        this.routes.push({ path: path, method: 'GET', callback, params: {} });
+    public get(path: string, ...args: Function[]): void { 
+        if (args.length == 2)
+            this.routes.push({ path, method: 'GET', middleware: args[0], callback: args[1], params: {} });
+        else if (args.length == 1)
+            this.routes.push({ path, method: 'GET', middleware: undefined, callback: args[0], params: {} });
     }
 
-    public post(path: string, callback: Function): void { 
-        this.routes.push({ path: path, method: 'POST', callback, params: {} });
+    public post(path: string, ...args: Function[]): void { 
+        if (args.length == 2)
+            this.routes.push({ path, method: 'POST', middleware: args[0], callback: args[1], params: {} });
+        else if (args.length == 1)
+            this.routes.push({ path, method: 'POST', middleware: undefined, callback: args[0], params: {} });
     }
 
-    public patch(path: string, callback: Function): void { 
-        this.routes.push({ path: path, method: 'PATCH', callback, params: {} });
+    public patch(path: string, ...args: Function[]): void { 
+        if (args.length == 2)
+            this.routes.push({ path, method: 'PATCH', middleware: args[0], callback: args[1], params: {} });
+        else if (args.length == 1)
+            this.routes.push({ path, method: 'PATCH', middleware: undefined, callback: args[0], params: {} });
     }
 
-    public put(path: string, callback: Function): void { 
-        this.routes.push({ path: path, method: 'PUT', callback, params: {} });
+    public put(path: string, ...args: Function[]): void { 
+        if (args.length == 2)
+            this.routes.push({ path, method: 'PUT', middleware: args[0], callback: args[1], params: {} });
+        else if (args.length == 1)
+            this.routes.push({ path, method: 'PUT', middleware: undefined, callback: args[0], params: {} });
     } 
-
-    public delete(path: string, callback: Function): void { 
-        this.routes.push({ path: path, method: 'DELETE', callback, params: {} });
+    
+    public delete(path: string, ...args: Function[]): void { 
+        if (args.length == 2)
+            this.routes.push({ path, method: 'DELETE', middleware: args[0], callback: args[1], params: {} });
+        else if (args.length == 1)
+            this.routes.push({ path, method: 'DELETE', middleware: undefined, callback: args[0], params: {} });
     }
 }
 
