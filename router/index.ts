@@ -153,7 +153,7 @@ class RouterRules {
     private callRouteWithoutBody(request: Request, response: Response, callback: Function, middleware: Function | undefined): void {
 
         if (middleware)
-        middleware(request, response);
+            middleware(request, response);
 
         callback(request, response); 
     }
