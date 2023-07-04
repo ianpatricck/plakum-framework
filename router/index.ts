@@ -2,6 +2,7 @@ import url from "url";
 import { IncomingMessage, ServerResponse } from "http";
 import Request from '../http/request';
 import Response, { ResponseData } from "../http/response";
+import { CORS, populateCorsBody } from "../http/cors";
 
 /*
  * Definição da rota
@@ -28,6 +29,7 @@ class RouterRules {
     protected response: Response = this.clearResponseObject();
 
     private isJsonRequest: boolean = false;
+    private globalCors: object = {};
 
     protected clearRequestObject(): Request {
         return {
@@ -50,6 +52,8 @@ class RouterRules {
             params: {},
             wasContentTypeSetted: false,
             setContentType: () => null,
+            setHeader: () => null,
+            setCors: () => null,
             send: () => null,
             serverResponse: Object.create(ServerResponse.prototype)
         }
@@ -174,8 +178,14 @@ class RouterRules {
             incomingMessage: incomingMessage
         };
 
-        this.response = new ResponseData(serverResponse);
+        if (this.globalCors) {
+            for (const key in this.globalCors) {
+                serverResponse.setHeader(key, this.globalCors[key]);
+            } 
+        }
 
+        this.response = new ResponseData(serverResponse);
+ 
         const method = route.method;
 
         switch (method) {
@@ -207,6 +217,16 @@ class RouterRules {
 
     public json(): void {
         this.isJsonRequest = true;
+    }
+
+    /*
+     * Define o corpo do CORS para toda requisição feita
+     *
+     */
+
+    public cors(options: CORS): void {
+        const cors = populateCorsBody(options);  
+        this.globalCors = cors;
     }
 }
 
