@@ -4,6 +4,8 @@ Plakum é um projeto pequeno que consiste em simples testes de API, é inspirado
 e mantém uma sintaxe semelhante. Seu núcleo é feito totalmente em TypeScript, no qual permite o uso de tipagens
 personalizadas da própria ferramenta.
 
+[![plakum.png](https://i.postimg.cc/d0bznfxj/plakum.png)](https://postimg.cc/qtGbv10N)
+
 ## Instalação e configuração
 
 ### NPM
