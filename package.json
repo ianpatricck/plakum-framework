@@ -1,7 +1,9 @@
 {
   "name": "plakum-framework",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "LICENSE", "README.md", "package.json"],
   "repository": "git@github.com:ianpatricck/plakum-framework.git",
   "author": "Ian Patrick <contatoianpatrick@gmail.com>",
   "license": "MIT",
